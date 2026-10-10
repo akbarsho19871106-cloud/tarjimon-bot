@@ -15,28 +15,40 @@ def home(): return "OK"
 
 def tr(text, to):
     try:
-        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={to}&dt=t&q={urllib.parse.quote(text)}"
-        j = requests.get(url, timeout=10).json()
-        return "".join([x[0] for x in j[0]])
+        q = urllib.parse.quote(text)
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={to}&dt=t&q={q}"
+        data = requests.get(url, timeout=10).json()
+        return "".join([i[0] for i in data[0]])
     except:
         return text
 
 @dp.message(Command("start"))
 async def start_handler(m: Message):
-    await m.answer("5 til: /ru /tg /uz /en /tr\nMisol: /ru Salom")
+    await m.answer("Салом деб ёзинг, 5 тилда чиқараман! 👇\n/ru /en /tg /uz /tr дан бирига алоҳида ҳам қилади")
 
 @dp.message()
 async def h(msg: Message):
-    t = msg.text
+    t = msg.text or ""
     if not t: return
-    lang = "ru"
-    txt = t
+
+    # Agar /ru Salom deb yozsa - faqat bitta tilga
     if t.startswith("/") and " " in t:
-        p = t.split(" ", 1)
-        lang = p[0][1:].lower()[:2]
-        txt = p[1]
-    res = tr(txt, lang)
-    await msg.answer(f"({lang}): {res}")
+        a,b = t.split(" ",1)
+        c = a[1:].lower()[:2]
+        if c in ["ru","tg","uz","en","tr"]:
+            res = tr(b, c)
+            await msg.answer(f"({c}): {res}")
+            return
+
+    # Oddiy "Salom" deb yozsa - 5 tasi birda
+    ru = tr(t, "ru")
+    tg = tr(t, "tg")
+    uz = tr(t, "uz")
+    en = tr(t, "en")
+    tr_tr = tr(t, "tr")
+
+    javob = f"📝 {t}\n\n🇷🇺 ru: {ru}\n🇹🇯 tg: {tg}\n🇺🇿 uz: {uz}\n🇺🇸 en: {en}\n🇹🇷 tr: {tr_tr}"
+    await msg.answer(javob)
 
 async def start_bot():
     await dp.start_polling(bot)
