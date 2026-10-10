@@ -11,45 +11,32 @@ dp = Dispatcher()
 app = Flask(__name__)
 
 @app.route('/')
-def home(): return "Bot ishlayapti!"
+def home(): return "OK"
 
-def translate_free(text, target='ru'):
-    target = target.lower()[:2]
-    enc_text = urllib.parse.quote(text)
+def tr(text, to):
     try:
-        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={target}&dt=t&q={enc_text}"
-        r = requests.get(url, timeout=10).json()
-        result = "".join([x[0] for x in r[0]])
-        if result: return result
-    except: pass
-    return text
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={to}&dt=t&q={urllib.parse.quote(text)}"
+        j = requests.get(url, timeout=10).json()
+        return "".join([x[0] for x in j[0]])
+    except:
+        return text
 
 @dp.message(Command("start"))
 async def start_handler(m: Message):
-    await m.answer(
-        "Tarjimon Bot - 5 til 👋\n\n"
-        "/ru matn - Ruscha 🇷🇺\n"
-        "/tg matn - Tojikcha 🇹🇯\n"
-        "/uz matn - O'zbekcha 🇺🇿\n"
-        "/en matn - Inglizcha 🇺🇸\n"
-        "/tr matn - Turkcha 🇹🇷\n\n"
-        "Misol: /tr Salom qalaysiz"
-    )
+    await m.answer("5 til: /ru /tg /uz /en /tr\nMisol: /ru Salom")
 
 @dp.message()
-async def translate_handler(message: Message):
-    txt = message.text
-    if not txt: return
-    target = "ru"
-    original = txt
-    if txt.startswith("/") and " " in txt:
-        parts = txt.split(" ", 1)
-        code = parts[0][1:].split("@")[0].lower()[:2]
-        if code in ['ru','tg','uz','en','tr']:
-            target = code
-            original = parts[1]
-    tr = translate_free(original, target)
-    await message.answer(f"✅ ({target}): {tr}")
+async def h(msg: Message):
+    t = msg.text
+    if not t: return
+    lang = "ru"
+    txt = t
+    if t.startswith("/") and " " in t:
+        p = t.split(" ", 1)
+        lang = p[0][1:].lower()[:2]
+        txt = p[1]
+    res = tr(txt, lang)
+    await msg.answer(f"({lang}): {res}")
 
 async def start_bot():
     await dp.start_polling(bot)
