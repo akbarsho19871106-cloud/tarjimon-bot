@@ -1,4 +1,3 @@
-
 import asyncio, os, requests, urllib.parse
 from flask import Flask
 import threading
@@ -16,33 +15,39 @@ def home(): return "Bot ishlayapti!"
 
 def translate_free(text, target='ru'):
     target = target.lower()[:2]
-    if target not in ['ru','en','tg','uz']: target='ru'
     enc_text = urllib.parse.quote(text)
     try:
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={target}&dt=t&q={enc_text}"
         r = requests.get(url, timeout=10).json()
         result = "".join([x[0] for x in r[0]])
-        if result:
-            return result
-    except:
-        pass
+        if result: return result
+    except: pass
     return text
 
 @dp.message(Command("start"))
 async def start_handler(m: Message):
-    await m.answer("Salom! Tarjimon bot 👋\n/ru Salom - ruschaga\n/tg Salom - tojikchaga\n/en Salom - inglizchaga")
+    await m.answer(
+        "Tarjimon Bot - 5 til 👋\n\n"
+        "/ru matn - Ruscha 🇷🇺\n"
+        "/tg matn - Tojikcha 🇹🇯\n"
+        "/uz matn - O'zbekcha 🇺🇿\n"
+        "/en matn - Inglizcha 🇺🇸\n"
+        "/tr matn - Turkcha 🇹🇷\n\n"
+        "Misol: /tr Salom qalaysiz"
+    )
 
 @dp.message()
 async def translate_handler(message: Message):
     txt = message.text
     if not txt: return
-    if txt == "/start": return
     target = "ru"
     original = txt
     if txt.startswith("/") and " " in txt:
         parts = txt.split(" ", 1)
-        target = parts[0][1:].split("@")[0][:2]
-        original = parts[1]
+        code = parts[0][1:].split("@")[0].lower()[:2]
+        if code in ['ru','tg','uz','en','tr']:
+            target = code
+            original = parts[1]
     tr = translate_free(original, target)
     await message.answer(f"✅ ({target}): {tr}")
 
