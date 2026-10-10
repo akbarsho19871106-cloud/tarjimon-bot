@@ -1,4 +1,5 @@
-import asyncio, os, requests
+
+import asyncio, os, requests, urllib.parse
 from flask import Flask
 import threading
 from aiogram import Bot, Dispatcher
@@ -14,38 +15,36 @@ app = Flask(__name__)
 def home(): return "Bot ishlayapti!"
 
 def translate_free(text, target='ru'):
+    target = target.lower()[:2]
+    if target not in ['ru','en','tg','uz']: target='ru'
+    enc_text = urllib.parse.quote(text)
     try:
-        # 1. MyMemory - email билан 1000 та/кун
-        r = requests.get(f"https://api.mymemory.translated.net/get?q={text}&langpair=auto|{target}&de=youremail@gmail.com", timeout=10).json()
-        if r.get('responseData', {}).get('translatedText'):
-            return r['responseData']['translatedText']
-    except: pass
-    try:
-        # 2. Lingva Translate - лимитсиз
-        r = requests.get(f"https://lingva.ml/api/v1/auto/{target}/{text}", timeout=10).json()
-        if r.get('translation'):
-            return r['translation']
-    except: pass
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={target}&dt=t&q={enc_text}"
+        r = requests.get(url, timeout=10).json()
+        result = "".join([x[0] for x in r[0]])
+        if result:
+            return result
+    except:
+        pass
     return text
 
 @dp.message(Command("start"))
 async def start_handler(m: Message):
-    await m.answer("Salom! Men tarjimonman. 👋\n/ru Salom - ruschaga\n/tg Salom - tojikchaga\n/en Salom - inglizchaga\n/uz Salom - uzbekchaga")
+    await m.answer("Salom! Tarjimon bot 👋\n/ru Salom - ruschaga\n/tg Salom - tojikchaga\n/en Salom - inglizchaga")
 
 @dp.message()
 async def translate_handler(message: Message):
     txt = message.text
     if not txt: return
-    if txt.startswith("/start"): return
+    if txt == "/start": return
     target = "ru"
     original = txt
     if txt.startswith("/") and " " in txt:
         parts = txt.split(" ", 1)
         target = parts[0][1:].split("@")[0][:2]
         original = parts[1]
-
     tr = translate_free(original, target)
-    await message.answer(f"✅ ({target}):\n{tr}")
+    await message.answer(f"✅ ({target}): {tr}")
 
 async def start_bot():
     await dp.start_polling(bot)
