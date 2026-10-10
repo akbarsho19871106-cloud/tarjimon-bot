@@ -1,4 +1,5 @@
-
+from flask import Flask
+import threading
 import os
 import asyncio
 import logging
@@ -6,6 +7,15 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from deep_translator import GoogleTranslator
 import time
+
+app = Flask(__name__)
+@app.route('/')
+def home(): return "Bot ishlayapti!"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
+
+threading.Thread(target=run_flask).start()
 
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -38,11 +48,6 @@ async def handle(message: types.Message):
         dest='en'; clean=text[4:]
     elif text.startswith('/uz '):
         dest='uz'; clean=text[4:]
-    else:
-        parts = clean.rsplit(' ', 1)
-        if len(parts)==2 and parts[1] in ['tg','ru','en','uz']:
-            clean, dest = parts[1], parts[0]
-            clean, dest = parts[0], parts[1]
     result = translate_text(clean, dest)
     await message.answer(f"{dest}: {result}")
 
