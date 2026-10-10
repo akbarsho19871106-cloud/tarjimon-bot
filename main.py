@@ -6,12 +6,11 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = 6641231847 # Ўз ID нгизни ёзинг!
+
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 app = Flask(__name__)
-
-@app.route('/')
-def home(): return "OK"
 
 def tr(text, to):
     try:
@@ -22,40 +21,60 @@ def tr(text, to):
     except:
         return text
 
+@app.route('/')
+def home(): return "OK"
+
 @dp.message(Command("start"))
 async def start_handler(m: Message):
-    await m.answer("Салом деб ёзинг, 5 тилда чиқараман! 👇\n/ru /en /tg /uz /tr дан бирига алоҳида ҳам қилади")
+    if m.from_user.id == ADMIN_ID:
+        await m.answer("Салом Хўжайин! 👋\nРасм ҳам ишлайди энди!")
+    else:
+        await m.answer("Салом! Хабарингиз админга юборилди.")
+        await bot.send_message(ADMIN_ID, f"📩 Янги мижоз:\n👤 {m.from_user.full_name}\n🆔 {m.from_user.id}\n\n📝 {m.text or m.caption or 'Расм юборди'}")
+        if m.photo:
+            await bot.send_photo(ADMIN_ID, m.photo[-1].file_id, caption=m.caption)
 
 @dp.message()
-async def h(msg: Message):
-    t = msg.text or ""
-    if not t: return
+async def all_handler(m: Message):
+    # Агар расм бўлса
+    if m.photo:
+        if m.from_user.id!= ADMIN_ID:
+            await bot.send_message(ADMIN_ID, f"📩 Расм келди:\n👤 {m.from_user.full_name}\n🆔 {m.from_user.id}")
+            await bot.send_photo(ADMIN_ID, m.photo[-1].file_id, caption=m.caption or "")
+            await m.answer("✅ Расмингиз админга юборилди!")
+        else:
+            # Сиз расм юборсангиз
+            if m.reply_to_message:
+                try:
+                    client_id = int(m.reply_to_message.text.split("🆔")[1].split("\n")[0].strip())
+                    await bot.send_photo(client_id, m.photo[-1].file_id, caption=m.caption or "")
+                    await m.answer("✅ Расм юборилди!")
+                except Exception as e:
+                    await m.answer(f"❌ Reply қилиб юборинг! Хатолик: {e}")
+        return
 
-    # Agar /ru Salom deb yozsa - faqat bitta tilga
-    if t.startswith("/") and " " in t:
-        a,b = t.split(" ",1)
-        c = a[1:].lower()[:2]
-        if c in ["ru","tg","uz","en","tr"]:
-            res = tr(b, c)
-            await msg.answer(f"({c}): {res}")
-            return
+    # Текст бўлса
+    text = m.text or m.caption or ""
+    if not text:
+        return
 
-    # Oddiy "Salom" deb yozsa - 5 tasi birda
-    ru = tr(t, "ru")
-    tg = tr(t, "tg")
-    uz = tr(t, "uz")
-    en = tr(t, "en")
-    tr_tr = tr(t, "tr")
+    if m.from_user.id == ADMIN_ID:
+        if m.reply_to_message:
+            try:
+                client_id = int(m.reply_to_message.text.split("🆔")[1].split("\n")[0].strip())
+                translated = f"📝 {text}\n\n🇷🇺 {tr(text,'ru')}\n🇹🇯 {tr(text,'tg')}\n🇺🇿 {tr(text,'uz')}\n🇺🇸 {tr(text,'en')}\n🇹🇷 {tr(text,'tr')}"
+                await bot.send_message(client_id, translated)
+                await m.answer("✅ Юборилди!")
+            except:
+                await m.answer("❌ Мижоз хабарига Reply қилиб ёзинг!")
+        else:
+            await m.answer(f"📝 {text}\n\n🇷🇺 {tr(text,'ru')}\n🇹🇯 {tr(text,'tg')}\n🇺🇿 {tr(text,'uz')}\n🇺🇸 {tr(text,'en')}\n🇹🇷 {tr(text,'tr')}")
+    else:
+        await bot.send_message(ADMIN_ID, f"📩 Янги мижоз:\n👤 {m.from_user.full_name} (@{m.from_user.username})\n🆔 {m.from_user.id}\n\n📝 Хабар: {text}")
+        await m.answer("✅ Хабарингиз қабул қилинди!")
 
-    javob = f"📝 {t}\n\n🇷🇺 ru: {ru}\n🇹🇯 tg: {tg}\n🇺🇿 uz: {uz}\n🇺🇸 en: {en}\n🇹🇷 tr: {tr_tr}"
-    await msg.answer(javob)
-
-async def start_bot():
-    await dp.start_polling(bot)
-
-def run_flask():
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-if __name__ == "__main__":
+def run_flask(): app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+async def main():
     threading.Thread(target=run_flask, daemon=True).start()
-    asyncio.run(start_bot())
+    await dp.start_polling(bot)
+if __name__ == "__main__": asyncio.run(main())
