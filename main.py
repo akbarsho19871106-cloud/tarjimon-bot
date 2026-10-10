@@ -14,14 +14,14 @@ def translate_text(text, dest='tg'):
         time.sleep(0.8)
         return GoogleTranslator(source='auto', target=dest).translate(text)
     except Exception as e:
-        return f"Хато: {e}"
+        return f"Xato: {e}"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def start(message: types.Message):
-    await message.answer("Салом! 👋 Мен таржимонман.\n/ru Салом - русчага\n/tg Салом - тоҷикчага\n/en Салом - инглизчага\n/uz Салом - ўзбекчага\n\nМатн ёзинг!")
+    await message.answer("Salom! Men tarjimonman.\n/ru Salom - ruschaga\n/tg Salom - tojikchaga\n/en Salom - inglizchaga\n/uz Salom - uzbekchaga")
 
 @dp.message()
 async def handle(message: types.Message):
@@ -40,11 +40,11 @@ async def handle(message: types.Message):
         dest='uz'; clean=text[4:]
     else:
         parts = clean.rsplit(' ', 1)
-        if len(parts)==2 and parts[-1] in ['tg','ru','en','uz']:
-            clean, dest = parts[0], parts[-1]
-
+        if len(parts)==2 and parts[1] in ['tg','ru','en','uz']:
+            clean, dest = parts[1], parts[0]
+            clean, dest = parts[0], parts[1]
     result = translate_text(clean, dest)
-    await message.answer(f"✅ ({dest}):\n{result}")
+    await message.answer(f"{dest}: {result}")
 
 async def main():
     logging.basicConfig(level=logging.INFO)
