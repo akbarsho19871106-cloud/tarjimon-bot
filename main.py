@@ -1,6 +1,6 @@
 import telebot
 import os
-from deep_translator import GoogleTranslator
+from deep_translator import MyMemoryTranslator
 from flask import Flask
 import threading
 
@@ -9,6 +9,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 user_lang = {}
 
 app = Flask(__name__)
+
 @app.route('/')
 def home():
     return "Bot is Live!"
@@ -27,17 +28,18 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def lang(call):
     user_lang[call.message.chat.id] = call.data
-    bot.send_message(call.message.chat.id, f"Тил танланди: {call.data} ✅ Энди матн юборинг!")
+    langs = {"uz":"Ўзбек","tg":"Тоҷикӣ","ru":"Русский","en":"English"}
+    bot.send_message(call.message.chat.id, f"Тил танланди: {langs.get(call.data)} ✅ Энди матн юборинг!")
 
 @bot.message_handler(func=lambda m: True)
 def trans(message):
     try:
         dest = user_lang.get(message.chat.id, 'ru')
-        txt = message.text
-        result = GoogleTranslator(source='auto', target=dest).translate(txt)
+        # MyMemory - чекловсиз
+        result = MyMemoryTranslator(source='auto', target=dest).translate(message.text)
         bot.send_message(message.chat.id, result)
     except Exception as e:
-        bot.send_message(message.chat.id, f"Хато: {e}")
+        bot.send_message(message.chat.id, f"Хато, қайта ёзинг: {e}")
 
 def run_flask():
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
