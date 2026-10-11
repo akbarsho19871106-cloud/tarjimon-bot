@@ -1,11 +1,19 @@
 import telebot
 import os
 from googletrans import Translator
+from flask import Flask
+import threading
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 translator = Translator()
 user_lang = {}
+
+# Render учун веб-сервер (бот ўчмаслиги учун)
+app = Flask(__name__)
+@app.route('/')
+def home():
+    return "Bot is Live!"
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -16,12 +24,12 @@ def start(message):
         telebot.types.InlineKeyboardButton("🇷🇺 Русский", callback_data="ru"),
         telebot.types.InlineKeyboardButton("🇬🇧 English", callback_data="en")
     )
-    bot.send_message(message.chat.id, "Тилни танланг:", reply_markup=markup)
+    bot.send_message(message.chat.id, "Тилни танланг / Забонро интихоб кунед:", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def lang(call):
     user_lang[call.message.chat.id] = call.data
-    bot.send_message(call.message.chat.id, f"Тил танланди: {call.data}. Энди матн юборинг!")
+    bot.send_message(call.message.chat.id, f"Тил танланди: {call.data} ✅ Энди матн юборинг!")
 
 @bot.message_handler(func=lambda m: True)
 def trans(message):
@@ -33,4 +41,9 @@ def trans(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"Хато: {e}")
 
-bot.infinity_polling()
+def run_flask():
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
+    bot.infinity_polling()
