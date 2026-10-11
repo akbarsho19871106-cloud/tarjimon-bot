@@ -1,15 +1,13 @@
 import telebot
 import os
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 from flask import Flask
 import threading
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
-translator = Translator()
 user_lang = {}
 
-# Render учун веб-сервер (бот ўчмаслиги учун)
 app = Flask(__name__)
 @app.route('/')
 def home():
@@ -36,8 +34,8 @@ def trans(message):
     try:
         dest = user_lang.get(message.chat.id, 'ru')
         txt = message.text
-        res = translator.translate(txt, dest=dest)
-        bot.send_message(message.chat.id, res.text)
+        result = GoogleTranslator(source='auto', target=dest).translate(txt)
+        bot.send_message(message.chat.id, result)
     except Exception as e:
         bot.send_message(message.chat.id, f"Хато: {e}")
 
